@@ -1,0 +1,17 @@
+Proceso iniciado
+Proceso en ejecución: 08/02/2022 01:23:48
+Proceso en ejecución: 08/02/2022 01:23:53
+Proceso en ejecución: 08/02/2022 01:23:58
+Proceso en ejecución: 08/02/2022 01:24:03
+Proceso en ejecución: 08/02/2022 01:24:08
+Proceso en ejecución: 08/02/2022 01:24:13
+Proceso en ejecución: 08/02/2022 01:24:18
+Proceso en ejecución: 08/02/2022 01:24:23
+Proceso en ejecución: 08/02/2022 01:24:28
+Proceso en ejecución: 08/02/2022 01:24:33
+Proceso en ejecución: 08/02/2022 01:24:38
+Proceso en ejecución: 08/02/2022 01:24:43
+Proceso en ejecución: 08/02/2022 01:24:48
+Proceso en ejecución: 08/02/2022 01:24:53
+Proceso en ejecución: 08/02/2022 01:24:58
+Proceso finalizado

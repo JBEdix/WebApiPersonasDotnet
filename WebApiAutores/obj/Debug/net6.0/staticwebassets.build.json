@@ -1,11 +1,19 @@
 {
   "Version": 1,
-  "Hash": "BAcxAY/vHzuCAo0Z52D/7vP/wgTVxc3eMGwTQiWgTZE=",
+  "Hash": "K2FozG6iqG7UnDLI6jtl9VHakk3fP9ke6v7RFSCe2Bw=",
   "Source": "WebApiAutores",
   "BasePath": "_content/WebApiAutores",
   "Mode": "Default",
   "ManifestType": "Build",
   "ReferencedProjectsConfiguration": [],
-  "DiscoveryPatterns": [],
+  "DiscoveryPatterns": [
+    {
+      "Name": "WebApiAutores\\wwwroot",
+      "Source": "WebApiAutores",
+      "ContentRoot": "C:\\Users\\jhera\\Documents\\MEGAsync\\Dotnet Web Api\\WebApiAutores\\WebApiAutores\\wwwroot\\",
+      "BasePath": "_content/WebApiAutores",
+      "Pattern": "**"
+    }
+  ],
   "Assets": []
 }
