@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "K2FozG6iqG7UnDLI6jtl9VHakk3fP9ke6v7RFSCe2Bw=",
+  "Hash": "/yCrIsI3/pRDNNKC14fnp1nRYT0Z1myWdSYQh6/TEeI=",
   "Source": "WebApiAutores",
   "BasePath": "_content/WebApiAutores",
   "Mode": "Default",
@@ -15,5 +15,23 @@
       "Pattern": "**"
     }
   ],
-  "Assets": []
+  "Assets": [
+    {
+      "Identity": "C:\\Users\\jhera\\Documents\\MEGAsync\\Dotnet Web Api\\WebApiAutores\\WebApiAutores\\wwwroot\\Archivo 1.txt",
+      "SourceId": "WebApiAutores",
+      "SourceType": "Discovered",
+      "ContentRoot": "C:\\Users\\jhera\\Documents\\MEGAsync\\Dotnet Web Api\\WebApiAutores\\WebApiAutores\\wwwroot\\",
+      "BasePath": "_content/WebApiAutores",
+      "RelativePath": "Archivo 1.txt",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\Archivo 1.txt"
+    }
+  ]
 }
