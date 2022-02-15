@@ -19,13 +19,20 @@ namespace WebApiAutores.Controllers
     {
         private readonly AplicationDbContext context;
         private readonly IMapper mapper;
+        private readonly IConfiguration configuration;
 
-        public AutoresController(AplicationDbContext context, IMapper mapper)
+        public AutoresController(AplicationDbContext context, IMapper mapper, IConfiguration configuration)
         {
             this.context = context;
             this.mapper = mapper;
+            this.configuration = configuration;
         }
-
+        [HttpGet("Configuraciones")]
+        public ActionResult<string> ObtenerConfiguracion()
+        {
+            //return configuration["connectionStrings:defaultConnection"]; // Accediendo a los atributos de appsettings.Development.json
+            return configuration["nombre"];
+        }
 
         [HttpGet] // api/autores
         public async Task<ActionResult<List<AutorDTO>>> Get()
