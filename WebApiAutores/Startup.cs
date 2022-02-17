@@ -1,8 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using System.IdentityModel.Tokens.Jwt;
+using System.Text;
 using System.Text.Json.Serialization;
 using WebApiAutores.Filtros;
 using WebApiAutores.Middlewares;
+using WebApiAutores.Servicios;
 
 namespace WebApiAutores
 {
@@ -10,6 +16,7 @@ namespace WebApiAutores
     {
         public Startup(IConfiguration configuration)
         {
+            JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
             Configuration = configuration;
         }
 
@@ -23,19 +30,70 @@ namespace WebApiAutores
             services.AddDbContext<AplicationDbContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("defaultConnection")));
 
-            
-
             services.AddEndpointsApiExplorer();
 
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(); // ctrl + . >> instalar el paquete Jwt
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options => options.TokenValidationParameters = new TokenValidationParameters
+                {  // ctrl + . >> instalar el paquete Jwt
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = false,
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(Configuration["llavejwt"])),
+                    ClockSkew = TimeSpan.Zero
+                });
 
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "WebApiAutores", Version = "V1" });
+                c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT",
+                    In = Microsoft.OpenApi.Models.ParameterLocation.Header
+                });
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        new string[]{ }                    }
+                });
+
             });
 
             services.AddAutoMapper(typeof(Startup));
 
+            // Configurando el servicio de Identity
+            services.AddIdentity<IdentityUser, IdentityRole>()
+                .AddEntityFrameworkStores<AplicationDbContext>()
+                .AddDefaultTokenProviders();
+
+            // Configurando la autorizacion basada en Claims
+            services.AddAuthorization(opciones =>
+            {
+                opciones.AddPolicy("EsAdmin", politica => politica.RequireClaim("EsAdmin"));
+            });
+
+            services.AddDataProtection();
+            services.AddTransient<HashService>();
+
+            services.AddCors(opciones =>
+            {
+                opciones.AddDefaultPolicy(builder =>
+                {
+                    builder.WithOrigins("https://www.apirequest.io").AllowAnyMethod().AllowAnyHeader();
+                });
+            });
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILogger<Startup> logger)
@@ -77,6 +135,8 @@ namespace WebApiAutores
             app.UseHttpsRedirection();
 
             app.UseRouting();
+
+            app.UseCors(); // Uso de cors
 
             app.UseAuthorization();
 

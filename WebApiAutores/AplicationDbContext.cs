@@ -1,9 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using WebApiAutores.Entidades;
 
 namespace WebApiAutores
 {
-    public class AplicationDbContext : DbContext
+    public class AplicationDbContext : IdentityDbContext
     {
         public AplicationDbContext(DbContextOptions options) : base(options)
         {
@@ -12,7 +13,8 @@ namespace WebApiAutores
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            modelBuilder.Entity<AutorLibro>().HasKey(auLib => new { auLib.AutorId, auLib.LibroId });
+            modelBuilder.Entity<AutorLibro>()
+                .HasKey(auLib => new { auLib.AutorId, auLib.LibroId });
         }
 
         public DbSet<Autor> Autores { get; set; } 

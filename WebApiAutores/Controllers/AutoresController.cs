@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,7 @@ namespace WebApiAutores.Controllers
     [ApiController]
     [Route("api/autores")]
     //[Route("api/[controller]")] // En tiempo de ejecucion el placeholder [controller] se sustituira por el nombre del controlador. En este caso, esta linea es practimente igual a la linea anterior, solo que la linea anterior se define el nombre explicitamente.
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "EsAdmin")] // Middleware para la autenticacion
     public class AutoresController : ControllerBase
     {
         private readonly AplicationDbContext context;
@@ -35,6 +37,7 @@ namespace WebApiAutores.Controllers
         }
 
         [HttpGet] // api/autores
+        [AllowAnonymous] // Middlaware para que en este endpoint omita la autenticacion
         public async Task<ActionResult<List<AutorDTO>>> Get()
         {
             //return await context.Autores.Include(x => x.Libros).ToListAsync();
@@ -122,6 +125,7 @@ namespace WebApiAutores.Controllers
         }
 
         [HttpDelete("{id:int}")] //api/autores/1
+        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "EsAdmin")] // Este endpoint solo se usara si el Jwt tiene el claim de EsAdmin
         public async Task<ActionResult> Delete(int id)
         {
             var existe = await context.Autores.AnyAsync(x => x.Id == id);
