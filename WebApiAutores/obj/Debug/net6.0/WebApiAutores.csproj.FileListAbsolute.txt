@@ -72,3 +72,5 @@ C:\Users\jhera\Documents\MEGAsync\Dotnet Web Api\WebApiAutores\WebApiAutores\bin
 C:\Users\jhera\Documents\MEGAsync\Dotnet Web Api\WebApiAutores\WebApiAutores\bin\Debug\net6.0\Microsoft.Extensions.Identity.Core.dll
 C:\Users\jhera\Documents\MEGAsync\Dotnet Web Api\WebApiAutores\WebApiAutores\bin\Debug\net6.0\Microsoft.Extensions.Identity.Stores.dll
 C:\Users\jhera\Documents\MEGAsync\Dotnet Web Api\WebApiAutores\WebApiAutores\obj\Debug\net6.0\refint\WebApiAutores.dll
+C:\Users\jhera\Documents\MEGAsync\Dotnet Web Api\WebApiAutores\WebApiAutores\bin\Debug\net6.0\WebApiAutores.xml
+C:\Users\jhera\Documents\MEGAsync\Dotnet Web Api\WebApiAutores\WebApiAutores\obj\Debug\net6.0\WebApiAutores.xml

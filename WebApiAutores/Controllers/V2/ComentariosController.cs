@@ -7,10 +7,10 @@ using Microsoft.EntityFrameworkCore;
 using WebApiAutores.DTOs;
 using WebApiAutores.Entidades;
 
-namespace WebApiAutores.Controllers
+namespace WebApiAutores.Controllers.V2
 {
     [ApiController]
-    [Route("api/libros/{libroId:int}/Comentarios")]
+    [Route("api/v2/libros/{libroId:int}/Comentarios")]
     public class ComentariosController: ControllerBase
     {
         private readonly AplicationDbContext context;
@@ -33,10 +33,11 @@ namespace WebApiAutores.Controllers
                 return NotFound();
             }
             var comentarios = await context.Comentarios.Where(comentarioDB => comentarioDB.LibroId == libroId).ToListAsync();
+            comentarios.ForEach(comentario => comentario.Contenido = comentario.Contenido.ToUpper());
             return mapper.Map<List<ComentarioDTO>>(comentarios);
         }
 
-        [HttpGet("{id:int}", Name = "obtenerComentario")]
+        [HttpGet("{id:int}", Name = "obtenerComentariov2")]
         public async Task<ActionResult<ComentarioDTO>> GetPorId(int id)
         {
             var comentario = await context.Comentarios.
@@ -68,7 +69,7 @@ namespace WebApiAutores.Controllers
             await context.SaveChangesAsync();
 
             var comentarioDTO = mapper.Map<ComentarioDTO>(comentario);
-            return CreatedAtRoute("obtenerComentario", new { id = comentario.Id, libroId = libroId }, comentarioDTO);
+            return CreatedAtRoute("obtenerComentariov2", new { id = comentario.Id, libroId = libroId }, comentarioDTO);
         }
 
         [HttpPut("{id:int}")]

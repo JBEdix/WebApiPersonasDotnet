@@ -4,11 +4,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.IdentityModel.Tokens.Jwt;
+using System.Reflection;
 using System.Text;
 using System.Text.Json.Serialization;
 using WebApiAutores.Filtros;
 using WebApiAutores.Middlewares;
 using WebApiAutores.Servicios;
+using WebApiAutores.Utilidades;
 
 namespace WebApiAutores
 {
@@ -24,7 +26,10 @@ namespace WebApiAutores
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers(opciones => { opciones.Filters.Add(typeof(FiltroDeExcepcion)); })
+            services.AddControllers(opciones => { 
+                opciones.Filters.Add(typeof(FiltroDeExcepcion));
+                opciones.Conventions.Add(new SwaggerAgrupaPorVersion());
+            })
                 .AddJsonOptions( x =>  x.JsonSerializerOptions.ReferenceHandler =  ReferenceHandler.IgnoreCycles)
                 .AddNewtonsoftJson();
             services.AddDbContext<AplicationDbContext>(options =>
@@ -46,7 +51,23 @@ namespace WebApiAutores
 
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "WebApiAutores", Version = "V1" });
+                c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { 
+                    Title = "WebApiAutores", 
+                    Version = "V1",
+                    Description = "Descripcion de mi web api",
+                    Contact = new OpenApiContact
+                    {
+                        Email = "jheral.blanco@gmail.com",
+                        Name = "Jheral Blanco",
+                        Url = new Uri("https://www.linkedin.com/in/jheral-blanco-8b5934180/")
+                    },
+                    License = new OpenApiLicense
+                    {
+                        Name = "MIT"
+                    }
+                });
+                c.SwaggerDoc("v2", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "WebApiAutores", Version = "V2" });
+
                 c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
                 {
                     Name = "Authorization",
@@ -68,6 +89,10 @@ namespace WebApiAutores
                         },
                         new string[]{ }                    }
                 });
+
+                var archivoXML = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var rutaXML = Path.Combine(AppContext.BaseDirectory, archivoXML);
+                c.IncludeXmlComments(rutaXML);
 
             });
 
@@ -91,7 +116,10 @@ namespace WebApiAutores
             {
                 opciones.AddDefaultPolicy(builder =>
                 {
-                    builder.WithOrigins("https://www.apirequest.io").AllowAnyMethod().AllowAnyHeader();
+                    builder.WithOrigins("http://localhost:4200")
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .WithExposedHeaders(new string[] { "CantidadTotalRegistros" });
                 });
             });
         }
@@ -129,7 +157,11 @@ namespace WebApiAutores
             {
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "WebApiAutores v1"));
+                app.UseSwaggerUI(c => {
+                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "WebApiAutores v1");
+                    c.SwaggerEndpoint("/swagger/v2/swagger.json", "WebApiAutores v2");
+
+                });
             }
 
             app.UseHttpsRedirection();

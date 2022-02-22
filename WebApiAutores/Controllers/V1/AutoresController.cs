@@ -10,13 +10,15 @@ using System.Threading.Tasks;
 using WebApiAutores.DTOs;
 using WebApiAutores.Entidades;
 using WebApiAutores.Filtros;
+using WebApiAutores.Utilidades;
 
-namespace WebApiAutores.Controllers
+namespace WebApiAutores.Controllers.V1
 {
     [ApiController]
-    [Route("api/autores")]
+    [Route("api/v1/autores")]
     //[Route("api/[controller]")] // En tiempo de ejecucion el placeholder [controller] se sustituira por el nombre del controlador. En este caso, esta linea es practimente igual a la linea anterior, solo que la linea anterior se define el nombre explicitamente.
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "EsAdmin")] // Middleware para la autenticacion
+    [ApiConventionType(typeof(DefaultApiConventions))]
     public class AutoresController : ControllerBase
     {
         private readonly AplicationDbContext context;
@@ -38,10 +40,13 @@ namespace WebApiAutores.Controllers
 
         [HttpGet] // api/autores
         [AllowAnonymous] // Middlaware para que en este endpoint omita la autenticacion
-        public async Task<ActionResult<List<AutorDTO>>> Get()
+        public async Task<ActionResult<List<AutorDTO>>> Get([FromQuery] PaginacionDTO paginacionDTO)
         {
             //return await context.Autores.Include(x => x.Libros).ToListAsync();
-            var autores = await context.Autores.ToListAsync();
+            var queryable = context.Autores.AsQueryable();
+            await HttpContext.InsertarParametrosPaginacionEnCabecera(queryable);
+            var autores = await queryable.OrderBy(autor => autor.Nombre).Paginar(paginacionDTO).ToListAsync();
+            //var autores = await context.Autores.ToListAsync();
             return mapper.Map<List<AutorDTO>>(autores);
             //return new List<Autor>()
             //{
@@ -124,6 +129,11 @@ namespace WebApiAutores.Controllers
             return NoContent();
         }
 
+        /// <summary>
+        /// Borra un autor
+        /// </summary>
+        /// <param name="id">Id del autor a borrar</param>
+        /// <returns></returns>
         [HttpDelete("{id:int}")] //api/autores/1
         //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "EsAdmin")] // Este endpoint solo se usara si el Jwt tiene el claim de EsAdmin
         public async Task<ActionResult> Delete(int id)
