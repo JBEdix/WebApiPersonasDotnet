@@ -1,9 +1,17 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using System.IdentityModel.Tokens.Jwt;
+using System.Reflection;
+using System.Text;
 using System.Text.Json.Serialization;
 using WebApiAutores.Filtros;
 using WebApiAutores.Middlewares;
 using WebApiAutores.Servicios;
+using WebApiAutores.Utilidades;
 
 namespace WebApiAutores
 {
@@ -11,6 +19,7 @@ namespace WebApiAutores
     {
         public Startup(IConfiguration configuration)
         {
+            JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
             Configuration = configuration;
         }
 
@@ -18,34 +27,103 @@ namespace WebApiAutores
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers(opciones =>
-            {
+            services.AddControllers(opciones => { 
                 opciones.Filters.Add(typeof(FiltroDeExcepcion));
-            }).AddJsonOptions( x => 
-                x.JsonSerializerOptions.ReferenceHandler =  ReferenceHandler.IgnoreCycles);
+                opciones.Conventions.Add(new SwaggerAgrupaPorVersion());
+            })
+                .AddJsonOptions( x =>  x.JsonSerializerOptions.ReferenceHandler =  ReferenceHandler.IgnoreCycles)
+                .AddNewtonsoftJson();
             services.AddDbContext<AplicationDbContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("defaultConnection")));
 
-            services.AddTransient<IServicio, ServicioA>(); // cuando necesitemos resolver el IServicio se nos va a intanciar una nueva instancia ServicioA. Esta es para funciones que van a ejecutar alguna funcionalidad sin tener que retener data que se va a usar en diferentes lugares. No utiliza estado.
-            //services.AddScoped<IServicio, ServicioA>(); // Lo que cambia es el tiempo de vida del servicio. El tiempo de vida de la clase servicioA aumenta, desde el mismo contexto HTTP se dara la misma instancia. En distintas peticiones HTTP se tendran distintas instancias. Ejemplo, el ApplicationDbContext.
-            //services.AddSingleton<IServicio, ServicioA>(); // Con esta, siempre tendremos la misma instancia, incluso para los distintos usuarios con distintas peticiones http.
-            services.AddTransient<ServicioTransient>();
-            services.AddScoped<ServicioScoped>();
-            services.AddSingleton<ServicioSingleton>();
-
-            services.AddTransient<MiFiltroDeAccion>();
-            services.AddHostedService<EscribirEnArchivo>();
-
             services.AddEndpointsApiExplorer();
 
-            services.AddResponseCaching();
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(); // ctrl + . >> instalar el paquete Jwt
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options => options.TokenValidationParameters = new TokenValidationParameters
+                {  // ctrl + . >> instalar el paquete Jwt
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = false,
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(Configuration["llavejwt"])),
+                    ClockSkew = TimeSpan.Zero
+                });
 
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "WebApiAutores", Version = "V1" });
+                c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { 
+                    Title = "WebApiAutores", 
+                    Version = "V1",
+                    Description = "Descripcion de mi web api",
+                    Contact = new OpenApiContact
+                    {
+                        Email = "jheral.blanco@gmail.com",
+                        Name = "Jheral Blanco",
+                        Url = new Uri("https://www.linkedin.com/in/jheral-blanco-8b5934180/")
+                    },
+                    License = new OpenApiLicense
+                    {
+                        Name = "MIT"
+                    }
+                });
+                c.SwaggerDoc("v2", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "WebApiAutores", Version = "V2" });
+
+                c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT",
+                    In = Microsoft.OpenApi.Models.ParameterLocation.Header
+                });
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        new string[]{ }                    }
+                });
+
+                var archivoXML = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var rutaXML = Path.Combine(AppContext.BaseDirectory, archivoXML);
+                c.IncludeXmlComments(rutaXML);
+
             });
 
+            services.AddAutoMapper(typeof(Startup));
+
+            // Configurando el servicio de Identity
+            services.AddIdentity<IdentityUser, IdentityRole>()
+                .AddEntityFrameworkStores<AplicationDbContext>()
+                .AddDefaultTokenProviders();
+
+            // Configurando la autorizacion basada en Claims
+            services.AddAuthorization(opciones =>
+            {
+                opciones.AddPolicy("EsAdmin", politica => politica.RequireClaim("EsAdmin"));
+            });
+
+            services.AddDataProtection();
+            services.AddTransient<HashService>();
+
+            services.AddCors(opciones =>
+            {
+                opciones.AddDefaultPolicy(builder =>
+                {
+                    builder.WithOrigins("http://localhost:4200")
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .WithExposedHeaders(new string[] { "CantidadTotalRegistros" });
+                });
+            });
+            services.AddApplicationInsightsTelemetry(Configuration["ApplicationInsights:ConnectionString"]);
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILogger<Startup> logger)
@@ -77,28 +155,23 @@ namespace WebApiAutores
             // app.UseMiddleware<LoguearRespuestaHttpMiddleware>(); // Aqui exponemos la clase
             app.UseLoguearRespuestaHTTP(); // No exponemos la clase.
 
-            // Middlawares son los que dicen Use
-            app.Map("/ruta1", app => // con esto bifurcamos la tuberia, si entramos a la ruta localhost:port/ruta1 estariamos entrando en este middleware.
-            {
-                app.Run(async contexto =>
-                {
-                    await contexto.Response.WriteAsync("Estoy interceptando la tuberia");
-                });
-            });
-            
-
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-                app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "WebApiAutores v1"));
+                
             }
+            app.UseSwagger();
+            app.UseSwaggerUI(c => {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "WebApiAutores v1");
+                c.SwaggerEndpoint("/swagger/v2/swagger.json", "WebApiAutores v2");
+
+            });
 
             app.UseHttpsRedirection();
 
             app.UseRouting();
 
-            app.UseResponseCaching();
+            app.UseCors(); // Uso de cors
 
             app.UseAuthorization();
 
